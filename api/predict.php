@@ -11,8 +11,9 @@ function fail(string $msg, int $code = 400): never {
 /** Call Roboflow once. Returns [class => confidence]. */
 function roboflow(string $bytes, array $cfg): array {
     // confidence=0 makes Roboflow return every class
-    $url = sprintf('https://classify.roboflow.com/%s/%s?api_key=%s&confidence=0',
-        rawurlencode($cfg['project_id']), rawurlencode((string)$cfg['version']), rawurlencode($cfg['api_key']));
+    $base = !empty($cfg['model_url']) ? $cfg['model_url']
+        : sprintf('https://classify.roboflow.com/%s/%s', rawurlencode($cfg['project_id']), rawurlencode((string)$cfg['version']));
+    $url = $base . '?api_key=' . rawurlencode($cfg['api_key']) . '&confidence=0';
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
@@ -58,7 +59,7 @@ $bytes = file_get_contents($f['tmp_name']);
 $runs = [roboflow($bytes, $cfg)];
 
 // Test-time augmentation: also classify a mirrored copy and average the scores (more stable results).
-if (function_exists('imagecreatefromstring') && function_exists('imageflip')) {
+if (!empty($cfg['tta']) && function_exists('imagecreatefromstring') && function_exists('imageflip')) {
     $im = @imagecreatefromstring($bytes);
     if ($im) {
         imageflip($im, IMG_FLIP_HORIZONTAL);
