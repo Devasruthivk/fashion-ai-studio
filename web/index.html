@@ -2,123 +2,194 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fashion AI Studio</title>
-<meta name="description" content="Detect fabric defects from a photo with AI.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fashion AI Studio — Fabric defect detection</title>
+<meta name="description" content="Upload a fabric photo and get an instant AI verdict on structural damage, discoloration, or fraying.">
+<meta name="theme-color" content="#0b0b12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236d5efc'/%3E%3Cpath d='M16 6l2.6 7.4L26 16l-7.4 2.6L16 26l-2.6-7.4L6 16l7.4-2.6z' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<script>try{var t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
-<header class="nav">
-  <div class="container nav-inner">
-    <a class="logo" href="#home"><span class="logo-mark">&#10022;</span>Fashion AI Studio</a>
-    <nav class="nav-links" id="links">
-      <a href="#home">Home</a><a href="#classify">Classify</a><a href="#history">History</a><a href="#about">About</a>
-    </nav>
-    <div class="nav-right">
-      <button class="icon-btn" id="theme" aria-label="Toggle dark mode" type="button">&#9680;</button>
-      <button class="icon-btn nav-toggle" aria-label="Menu" type="button" onclick="document.getElementById('links').classList.toggle('open')">&#9776;</button>
+<div class="bg" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="grain"></span></div>
+
+<header class="nav-wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="logo" href="#top" aria-label="Fashion AI Studio home"><span class="logo-mark">&#10022;</span><span>Fashion AI <em>Studio</em></span></a>
+    <div class="nav-links" id="links">
+      <a href="#inspect">Inspect</a><a href="#detects">Defects</a><a href="#how">How it works</a><a href="#history">History</a>
     </div>
-  </div>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme" type="button" aria-label="Switch light or dark theme">
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>
+      </button>
+      <a class="btn btn-primary btn-sm hide-sm" href="#inspect">Start inspecting</a>
+    </div>
+  </nav>
 </header>
-<main>
-<section class="hero" id="home">
-  <div class="container">
-    <span class="badge">&#10022; AI fabric defect detection</span>
-    <h1>Spot fabric defects <span class="grad">in seconds</span></h1>
-    <p class="lead">Upload a photo of any fabric. Our Roboflow-trained model tells you what kind of defect it sees, and how sure it is.</p>
-    <div class="hero-actions">
-      <a class="btn btn-primary" href="#classify">Try it now &rarr;</a>
-      <a class="btn" href="#about">How it works</a>
-    </div>
-    <div class="hero-stats">
-      <div><strong>3</strong><span>defect classes</span></div>
-      <div><strong id="hs-n">0</strong><span>images checked here</span></div>
-      <div><strong>&lt; 3 s</strong><span>per result</span></div>
-    </div>
-  </div>
-</section>
 
-<section class="container block">
-  <h2 class="center">What it can detect</h2>
-  <p class="muted center" style="margin-bottom:24px">Three common fabric problems, each with a confidence score.</p>
-  <div class="grid-3">
-    <div class="card class-card"><div class="ico">&#9888;</div><h3>Structural damage</h3><p class="muted">Holes, tears, or broken threads that weaken the fabric.</p></div>
-    <div class="card class-card"><div class="ico">&#9680;</div><h3>Surface discoloration</h3><p class="muted">Stains, fading, or uneven colour on the fabric surface.</p></div>
-    <div class="card class-card"><div class="ico">&#8779;</div><h3>Seam and edge fraying</h3><p class="muted">Loose threads or unravelling along seams and edges.</p></div>
-  </div>
-</section>
-
-<section class="container section" id="classify">
-  <h1>Classify a fabric image</h1>
-  <p class="muted" style="margin-bottom:22px">Upload a clear, well-lit close-up of the fabric for the best result.</p>
-  <div class="two-col">
-    <div class="card">
-      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload an image">
-        <div class="dz-icon">&#8679;</div>
-        <p><strong>Tap or drag an image here</strong></p>
-        <p class="muted">JPG, PNG, WEBP up to 5 MB &middot; on phones you can use the camera</p>
-      </div>
-      <div class="preview-wrap" id="pw" hidden>
-        <img id="preview" alt="Selected image preview">
-        <button class="clear" id="clear" type="button" aria-label="Remove image">&times;</button>
-      </div>
-      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
-      <button id="go" class="btn btn-primary full" type="button">Classify image</button>
-      <div id="error" class="error" role="alert" hidden></div>
-      <ul class="tips" style="margin-top:18px">
-        <li>Fill the frame with the fabric.</li>
-        <li>Use even lighting, avoid shadows and glare.</li>
-        <li>One defect type per photo gives the clearest result.</li>
+<main id="top">
+  <!-- HERO + APP -->
+  <section class="hero container" id="inspect">
+    <div class="hero-copy reveal">
+      <span class="eyebrow"><span class="dot"></span>AI textile inspection</span>
+      <h1>Every flaw, <em>found</em> in a single photo.</h1>
+      <p class="lead">Upload or snap a picture of any fabric. Our vision model spots structural damage, discoloration, and fraying, and tells you exactly how sure it is.</p>
+      <ul class="trust">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Results in about 2 seconds</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Works on phone and desktop</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Photos stay on your device</li>
       </ul>
     </div>
-    <div class="card" id="result" aria-live="polite">
-      <div id="result-empty" class="placeholder"><div class="big">&#9737;</div><p>Your result will appear here.</p></div>
-      <div id="spinner" class="spinner" hidden></div>
-      <div id="result-body" hidden>
-        <div class="verdict">
-          <div>
-            <p class="muted" style="margin:0">Top prediction</p>
-            <h2 id="top-class"></h2>
-            <span id="level" class="pill"></span>
-          </div>
-          <div id="top-conf" class="conf"></div>
+
+    <div class="app reveal" id="app" aria-live="polite">
+      <!-- state: idle -->
+      <div class="state" id="s-idle">
+        <div class="app-head"><span class="app-title">New inspection</span><span class="kbd hide-sm">Paste with Ctrl+V</span></div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a fabric photo">
+          <div class="drop-ring"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg></div>
+          <p class="drop-title">Drop a fabric photo here</p>
+          <p class="drop-sub">JPG, PNG or WEBP · up to 5 MB</p>
         </div>
-        <p id="info" class="muted"></p>
-        <div id="warn" class="alert" hidden><span>&#9888;</span><span id="warn-text"></span></div>
-        <div id="bars"></div>
+        <div class="app-actions">
+          <button class="btn btn-ghost" id="pick" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>Choose photo</button>
+          <button class="btn btn-ghost" id="cam" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Take photo</button>
+        </div>
+        <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <input type="file" id="camfile" accept="image/*" capture="environment" hidden>
+        <p class="hint">Tip: fill the frame with fabric and use even light.</p>
+      </div>
+
+      <!-- state: analysing -->
+      <div class="state" id="s-busy" hidden>
+        <div class="scan">
+          <img id="busy-img" alt="Fabric being analysed">
+          <span class="scan-line"></span><span class="scan-grid"></span>
+        </div>
+        <p class="busy-text"><span class="shimmer">Analysing fibres</span><span class="dots"><i></i><i></i><i></i></span></p>
+      </div>
+
+      <!-- state: result -->
+      <div class="state" id="s-done" hidden>
+        <div class="result-top">
+          <div class="thumb"><img id="res-img" alt="Inspected fabric"></div>
+          <div class="gauge" id="gauge">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="g-bg" cx="60" cy="60" r="52"/><circle class="g-fg" id="g-fg" cx="60" cy="60" r="52"/></svg>
+            <div class="g-val"><strong id="g-num">0</strong><span>%</span></div>
+          </div>
+        </div>
+        <p class="res-label">Detected</p>
+        <h2 class="res-class" id="res-class"></h2>
+        <div class="res-meta"><span class="chip" id="res-level"></span><span class="muted" id="res-info"></span></div>
+        <div class="note" id="res-warn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span id="res-warn-text"></span></div>
+        <div class="bars" id="bars"></div>
+        <div class="app-actions">
+          <button class="btn btn-primary" id="again" type="button">Inspect another</button>
+          <button class="btn btn-ghost" id="share" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button>
+        </div>
+      </div>
+
+      <!-- state: error -->
+      <div class="state" id="s-err" hidden>
+        <div class="err-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div>
+        <h3>That didn't work</h3>
+        <p class="muted" id="err-text"></p>
+        <button class="btn btn-primary" id="retry" type="button">Try again</button>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="container section" id="history">
-  <h1>History</h1>
-  <p class="muted" style="margin-bottom:20px">Saved only on this device. <button class="btn btn-danger" id="clear-all" type="button">Clear all</button></p>
-  <div id="hist-empty" class="card placeholder"><div class="big">&#128247;</div><h3>No predictions yet</h3><p>Classify your first image to see it here.</p></div>
-  <div class="hist-grid" id="hist"></div>
-</section>
+  <!-- STATS STRIP -->
+  <section class="container strip reveal" aria-label="Highlights">
+    <div><strong>3</strong><span>defect classes</span></div>
+    <div><strong>~2s</strong><span>per inspection</span></div>
+    <div><strong id="stat-n">0</strong><span>inspections on this device</span></div>
+    <div><strong>ViT</strong><span>vision transformer model</span></div>
+  </section>
 
-<section class="container section narrow" id="about">
-  <h1>About this project</h1>
-  <div class="card" style="margin:16px 0">
-    <h3>How it works</h3>
-    <ol class="tips" style="font-size:15px;line-height:1.9">
-      <li>You upload a JPG, PNG, or WEBP image.</li>
-      <li>It's resized in your browser and sent to a secure server function.</li>
-      <li>The server asks the Roboflow model (ViT, trained on 3 defect classes) for a score per class.</li>
-      <li>You see the top class with a trust level: high, medium, or low.</li>
+  <!-- DEFECTS -->
+  <section class="container section" id="detects">
+    <div class="section-head reveal">
+      <span class="eyebrow">What it detects</span>
+      <h2>Three defects, <em>one glance</em>.</h2>
+    </div>
+    <div class="cards">
+      <article class="card reveal">
+        <div class="card-ico c1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20L20 4M9 4h11v11"/><path d="M4 9l3 3-3 3"/></svg></div>
+        <h3>Structural damage</h3>
+        <p>Holes, tears, cuts, and broken threads that weaken the weave.</p>
+      </article>
+      <article class="card reveal">
+        <div class="card-ico c2"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 010 16z" class="fill"/></svg></div>
+        <h3>Surface discoloration</h3>
+        <p>Stains, fading, bleaching, and uneven dye across the surface.</p>
+      </article>
+      <article class="card reveal">
+        <div class="card-ico c3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8c3 0 3 3 6 3s3-3 6-3 3 3 6 3M3 14c3 0 3 3 6 3s3-3 6-3 3 3 6 3"/></svg></div>
+        <h3>Seam and edge fraying</h3>
+        <p>Loose threads and unravelling along seams, hems, and edges.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="container section" id="how">
+    <div class="section-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>From photo to verdict in <em>three steps</em>.</h2>
+    </div>
+    <ol class="steps">
+      <li class="reveal"><span class="step-n">01</span><h3>Capture</h3><p>Upload, drag in, paste, or take a photo with your phone camera.</p></li>
+      <li class="reveal"><span class="step-n">02</span><h3>Analyse</h3><p>A vision transformer trained on real defect photos scores every class.</p></li>
+      <li class="reveal"><span class="step-n">03</span><h3>Decide</h3><p>See the top defect, its confidence, and a clear warning when the model is unsure.</p></li>
     </ol>
-  </div>
-  <div class="card">
-    <h3>Understanding the confidence</h3>
-    <p class="muted" style="margin:0"><strong>High</strong>: top score 60% or more and clearly ahead. <strong>Medium</strong>: 45% or more with a small lead. <strong>Low</strong>: the model is unsure, so take a clearer photo or check by eye.</p>
-  </div>
-</section>
+    <div class="legend reveal">
+      <div><span class="chip high">High</span> 60%+ and clearly ahead</div>
+      <div><span class="chip medium">Medium</span> 45%+ with a small lead</div>
+      <div><span class="chip low">Low</span> unsure, retake or check by eye</div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="container section" id="history">
+    <div class="section-head row reveal">
+      <div><span class="eyebrow">Your inspections</span><h2>History</h2></div>
+      <div class="filters" id="filters" role="group" aria-label="Filter history"></div>
+    </div>
+    <div class="empty reveal" id="hist-empty">
+      <p>No inspections yet. Your results will appear here, saved only on this device.</p>
+      <a class="btn btn-ghost" href="#inspect">Run your first inspection</a>
+    </div>
+    <div class="hist" id="hist"></div>
+    <div class="hist-foot" id="hist-foot" hidden><button class="link-btn" id="clear-all" type="button">Clear history</button></div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container section">
+    <div class="cta reveal">
+      <h2>Ready to check a fabric?</h2>
+      <p>It takes one photo.</p>
+      <a class="btn btn-light" href="#inspect">Start inspecting</a>
+    </div>
+  </section>
 </main>
-<footer class="footer"><div class="container">&copy; <span id="yr"></span> Fashion AI Studio &middot; Powered by Roboflow</div></footer>
+
+<footer class="container footer">
+  <span>&copy; <span id="yr"></span> Fashion AI Studio</span>
+  <span class="muted">Powered by Roboflow · Results are guidance, not certification</span>
+</footer>
+
+<nav class="tabbar" aria-label="Quick navigation">
+  <a href="#inspect"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Inspect</a>
+  <a href="#detects"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Defects</a>
+  <a href="#history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>History</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="app.js"></script>
 </body>
 </html>
