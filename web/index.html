@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fashion AI Studio</title>
+<meta name="description" content="Detect fabric defects from a photo with AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="#home"><span class="logo-mark">&#10022;</span>Fashion AI Studio</a>
+    <nav class="nav-links" id="links">
+      <a href="#home">Home</a><a href="#classify">Classify</a><a href="#history">History</a><a href="#about">About</a>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" id="theme" aria-label="Toggle dark mode" type="button">&#9680;</button>
+      <button class="icon-btn nav-toggle" aria-label="Menu" type="button" onclick="document.getElementById('links').classList.toggle('open')">&#9776;</button>
+    </div>
+  </div>
+</header>
+<main>
+<section class="hero" id="home">
+  <div class="container">
+    <span class="badge">&#10022; AI fabric defect detection</span>
+    <h1>Spot fabric defects <span class="grad">in seconds</span></h1>
+    <p class="lead">Upload a photo of any fabric. Our Roboflow-trained model tells you what kind of defect it sees, and how sure it is.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#classify">Try it now &rarr;</a>
+      <a class="btn" href="#about">How it works</a>
+    </div>
+    <div class="hero-stats">
+      <div><strong>3</strong><span>defect classes</span></div>
+      <div><strong id="hs-n">0</strong><span>images checked here</span></div>
+      <div><strong>&lt; 3 s</strong><span>per result</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="container block">
+  <h2 class="center">What it can detect</h2>
+  <p class="muted center" style="margin-bottom:24px">Three common fabric problems, each with a confidence score.</p>
+  <div class="grid-3">
+    <div class="card class-card"><div class="ico">&#9888;</div><h3>Structural damage</h3><p class="muted">Holes, tears, or broken threads that weaken the fabric.</p></div>
+    <div class="card class-card"><div class="ico">&#9680;</div><h3>Surface discoloration</h3><p class="muted">Stains, fading, or uneven colour on the fabric surface.</p></div>
+    <div class="card class-card"><div class="ico">&#8779;</div><h3>Seam and edge fraying</h3><p class="muted">Loose threads or unravelling along seams and edges.</p></div>
+  </div>
+</section>
+
+<section class="container section" id="classify">
+  <h1>Classify a fabric image</h1>
+  <p class="muted" style="margin-bottom:22px">Upload a clear, well-lit close-up of the fabric for the best result.</p>
+  <div class="two-col">
+    <div class="card">
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload an image">
+        <div class="dz-icon">&#8679;</div>
+        <p><strong>Tap or drag an image here</strong></p>
+        <p class="muted">JPG, PNG, WEBP up to 5 MB &middot; on phones you can use the camera</p>
+      </div>
+      <div class="preview-wrap" id="pw" hidden>
+        <img id="preview" alt="Selected image preview">
+        <button class="clear" id="clear" type="button" aria-label="Remove image">&times;</button>
+      </div>
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <button id="go" class="btn btn-primary full" type="button">Classify image</button>
+      <div id="error" class="error" role="alert" hidden></div>
+      <ul class="tips" style="margin-top:18px">
+        <li>Fill the frame with the fabric.</li>
+        <li>Use even lighting, avoid shadows and glare.</li>
+        <li>One defect type per photo gives the clearest result.</li>
+      </ul>
+    </div>
+    <div class="card" id="result" aria-live="polite">
+      <div id="result-empty" class="placeholder"><div class="big">&#9737;</div><p>Your result will appear here.</p></div>
+      <div id="spinner" class="spinner" hidden></div>
+      <div id="result-body" hidden>
+        <div class="verdict">
+          <div>
+            <p class="muted" style="margin:0">Top prediction</p>
+            <h2 id="top-class"></h2>
+            <span id="level" class="pill"></span>
+          </div>
+          <div id="top-conf" class="conf"></div>
+        </div>
+        <p id="info" class="muted"></p>
+        <div id="warn" class="alert" hidden><span>&#9888;</span><span id="warn-text"></span></div>
+        <div id="bars"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container section" id="history">
+  <h1>History</h1>
+  <p class="muted" style="margin-bottom:20px">Saved only on this device. <button class="btn btn-danger" id="clear-all" type="button">Clear all</button></p>
+  <div id="hist-empty" class="card placeholder"><div class="big">&#128247;</div><h3>No predictions yet</h3><p>Classify your first image to see it here.</p></div>
+  <div class="hist-grid" id="hist"></div>
+</section>
+
+<section class="container section narrow" id="about">
+  <h1>About this project</h1>
+  <div class="card" style="margin:16px 0">
+    <h3>How it works</h3>
+    <ol class="tips" style="font-size:15px;line-height:1.9">
+      <li>You upload a JPG, PNG, or WEBP image.</li>
+      <li>It's resized in your browser and sent to a secure server function.</li>
+      <li>The server asks the Roboflow model (ViT, trained on 3 defect classes) for a score per class.</li>
+      <li>You see the top class with a trust level: high, medium, or low.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>Understanding the confidence</h3>
+    <p class="muted" style="margin:0"><strong>High</strong>: top score 60% or more and clearly ahead. <strong>Medium</strong>: 45% or more with a small lead. <strong>Low</strong>: the model is unsure, so take a clearer photo or check by eye.</p>
+  </div>
+</section>
+</main>
+<footer class="footer"><div class="container">&copy; <span id="yr"></span> Fashion AI Studio &middot; Powered by Roboflow</div></footer>
+<script src="app.js"></script>
+</body>
+</html>
