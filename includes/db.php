@@ -28,4 +28,14 @@ function db(): PDO {
     return $pdo;
 }
 
+/** Human-friendly description of each class the model knows. */
+function class_info(string $name): array {
+    $all = [
+        'structural damage'     => ['icon' => '⚠', 'text' => 'Holes, tears, or broken threads that weaken the fabric.'],
+        'surface discoloration' => ['icon' => '◐', 'text' => 'Stains, fading, or uneven colour on the fabric surface.'],
+        'seam and edge fraying' => ['icon' => '≋', 'text' => 'Loose threads or unravelling along seams and edges.'],
+    ];
+    return $all[strtolower($name)] ?? ['icon' => '●', 'text' => 'Predicted by your Roboflow model.'];
+}
+
 function e($s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }

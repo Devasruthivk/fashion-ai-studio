@@ -8,6 +8,38 @@ function fail(string $msg, int $code = 400): never {
     exit;
 }
 
+/** Call Roboflow once. Returns [class => confidence]. */
+function roboflow(string $bytes, array $cfg): array {
+    // confidence=0 makes Roboflow return every class
+    $url = sprintf('https://classify.roboflow.com/%s/%s?api_key=%s&confidence=0',
+        rawurlencode($cfg['project_id']), rawurlencode((string)$cfg['version']), rawurlencode($cfg['api_key']));
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => base64_encode($bytes),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+    ]);
+    $body = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $cerr = curl_error($ch);
+    curl_close($ch);
+
+    if ($body === false) fail('Could not reach Roboflow: ' . $cerr . ' (if this mentions SSL, see the README cacert.pem fix).', 502);
+    $data = json_decode($body, true);
+    if ($status === 401 || $status === 403) fail('Roboflow rejected the API key.', 502);
+    if ($status >= 400 || !is_array($data)) fail('Roboflow error: ' . ($data['message'] ?? $data['error'] ?? 'HTTP ' . $status), 502);
+
+    $out = [];
+    foreach (($data['predictions'] ?? []) as $k => $v) {
+        if (!is_array($v)) continue;
+        if (isset($v['class'])) $out[$v['class']] = (float)$v['confidence'];          // single-label
+        elseif (isset($v['confidence'])) $out[(string)$k] = (float)$v['confidence'];   // multi-label
+    }
+    return $out;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail('Use POST.', 405);
 $cfg = cfg();
 if (empty($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) fail('No image received or upload failed.');
@@ -22,37 +54,33 @@ if (!$ext || @getimagesize($f['tmp_name']) === false) fail('Only JPG, PNG, or WE
 if (empty($cfg['api_key']) || $cfg['api_key'] === 'YOUR_ROBOFLOW_API_KEY') fail('Roboflow API key is not set in includes/config.php.', 500);
 if (!function_exists('curl_init')) fail('The PHP cURL extension is not enabled.', 500);
 
-// confidence=0 makes Roboflow return every class (otherwise low-scoring ones are dropped)
-$url = sprintf('https://classify.roboflow.com/%s/%s?api_key=%s&confidence=0',
-    rawurlencode($cfg['project_id']), rawurlencode((string)$cfg['version']), rawurlencode($cfg['api_key']));
+$bytes = file_get_contents($f['tmp_name']);
+$runs = [roboflow($bytes, $cfg)];
 
-$ch = curl_init($url);
-curl_setopt_array($ch, [
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => base64_encode(file_get_contents($f['tmp_name'])),
-    CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 30,
-]);
-$body = curl_exec($ch);
-$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$cerr = curl_error($ch);
-curl_close($ch);
-
-if ($body === false) fail('Could not reach Roboflow: ' . $cerr . ' (if this mentions SSL, see the README cacert.pem fix).', 502);
-$data = json_decode($body, true);
-if ($status === 401 || $status === 403) fail('Roboflow rejected the API key.', 502);
-if ($status >= 400 || !is_array($data)) fail('Roboflow error: ' . ($data['message'] ?? $data['error'] ?? 'HTTP ' . $status), 502);
-
-$preds = [];
-$p = $data['predictions'] ?? [];
-foreach ($p as $k => $v) {
-    if (is_array($v) && isset($v['class'])) $preds[] = ['class' => $v['class'], 'confidence' => (float)$v['confidence']];   // single-label
-    elseif (is_array($v) && isset($v['confidence'])) $preds[] = ['class' => (string)$k, 'confidence' => (float)$v['confidence']]; // multi-label
+// Test-time augmentation: also classify a mirrored copy and average the scores (more stable results).
+if (function_exists('imagecreatefromstring') && function_exists('imageflip')) {
+    $im = @imagecreatefromstring($bytes);
+    if ($im) {
+        imageflip($im, IMG_FLIP_HORIZONTAL);
+        ob_start(); imagejpeg($im, null, 92); $flipped = ob_get_clean();
+        imagedestroy($im);
+        if ($flipped) $runs[] = roboflow($flipped, $cfg);
+    }
 }
-if (!$preds) fail('The model returned no predictions.', 502);
+
+$sum = [];
+foreach ($runs as $r) foreach ($r as $cls => $c) $sum[$cls] = ($sum[$cls] ?? 0) + $c;
+if (!$sum) fail('The model returned no predictions.', 502);
+$preds = [];
+foreach ($sum as $cls => $c) $preds[] = ['class' => $cls, 'confidence' => round($c / count($runs), 4)];
 usort($preds, fn($a, $b) => $b['confidence'] <=> $a['confidence']);
 $top = $preds[0];
+$margin = $top['confidence'] - ($preds[1]['confidence'] ?? 0);
+
+// How much to trust the answer
+if ($top['confidence'] >= 0.6 && $margin >= 0.15) $level = 'high';
+elseif ($top['confidence'] >= 0.45 && $margin >= 0.05) $level = 'medium';
+else $level = 'low';
 
 $dir = __DIR__ . '/../uploads';
 if (!is_dir($dir)) mkdir($dir, 0755, true);
@@ -63,5 +91,8 @@ $st = db()->prepare('INSERT INTO predictions (filename, top_class, confidence, a
 $st->execute([$name, $top['class'], $top['confidence'], json_encode($preds)]);
 
 $s = db()->query('SELECT COUNT(*) AS n, AVG(confidence) AS avgc, COUNT(DISTINCT top_class) AS k FROM predictions')->fetch();
-echo json_encode(['top' => $top, 'predictions' => $preds, 'stats' => [
-    'total' => (int)$s['n'], 'avg' => round($s['avgc'] * 100), 'classes' => (int)$s['k']]]);
+echo json_encode([
+    'top' => $top, 'predictions' => $preds, 'level' => $level, 'margin' => round($margin, 4),
+    'info' => class_info($top['class']), 'views' => count($runs),
+    'stats' => ['total' => (int)$s['n'], 'avg' => round($s['avgc'] * 100), 'classes' => (int)$s['k']],
+]);
