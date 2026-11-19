@@ -1,0 +1,4 @@
+includes/config.php
+data/*.sqlite
+uploads/*
+!uploads/.htaccess
