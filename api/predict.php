@@ -22,7 +22,8 @@ if (!$ext || @getimagesize($f['tmp_name']) === false) fail('Only JPG, PNG, or WE
 if (empty($cfg['api_key']) || $cfg['api_key'] === 'YOUR_ROBOFLOW_API_KEY') fail('Roboflow API key is not set in includes/config.php.', 500);
 if (!function_exists('curl_init')) fail('The PHP cURL extension is not enabled.', 500);
 
-$url = sprintf('https://classify.roboflow.com/%s/%s?api_key=%s',
+// confidence=0 makes Roboflow return every class (otherwise low-scoring ones are dropped)
+$url = sprintf('https://classify.roboflow.com/%s/%s?api_key=%s&confidence=0',
     rawurlencode($cfg['project_id']), rawurlencode((string)$cfg['version']), rawurlencode($cfg['api_key']));
 
 $ch = curl_init($url);
